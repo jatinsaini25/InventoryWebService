@@ -6,22 +6,14 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	product "github.com/jatinsaini25/WEBSERVICE/product"
 	"strconv"
 	"strings"
+	"time"
 )
 
-//Product Model Schema
-type Product struct {
-	ProductID      int    `json:"productId"`
-	Manufacturer   string `json:"manufacturer"`
-	Sku            string `json:"sku"`
-	Upc            string `json:"upc"`
-	PricePerUnit   string `json:"pricePerUnit"`
-	QuantityOnHand int    `json:"quantityOnHand"`
-	ProductName    string `json:"productName"`
-}
-
-var ProductList []Product
+//Product List
+var ProductList []product.Product
 
 //Initialize the product array
 func init() {
@@ -81,7 +73,7 @@ func HandleProducts(w http.ResponseWriter, r *http.Request) {
 		w.Write(ProductJSON)
 
 	case http.MethodPost:
-		var newProduct Product
+		var newProduct product.Product
 		bodyBytes, err := ioutil.ReadAll(r.Body)
 
 		if err != nil {
@@ -150,7 +142,7 @@ func GetProduct(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		var productBody Product
+		var productBody product.Product
 
 		err = json.Unmarshal(requestBody, &productBody)
 
@@ -171,7 +163,7 @@ func GetProduct(w http.ResponseWriter, r *http.Request) {
 }
 
 //Find a product from products array
-func FindProductById(productId int) (*Product, int) {
+func FindProductById(productId int) (*product.Product, int) {
 	for i, v := range ProductList {
 		if v.ProductID == productId {
 			return &v, i
@@ -180,8 +172,23 @@ func FindProductById(productId int) (*Product, int) {
 	return nil, 0
 }
 
+func middlewareHandlerFunc(handler http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		fmt.Println("Before Handler, middleware start")
+		start := time.Now()
+		if x := false; x {
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+		handler.ServeHTTP(w, r)
+		fmt.Printf("Middleware finished : %v", time.Since(start))
+	})
+}
+
 func main() {
-	http.HandleFunc("/products", HandleProducts)
-	http.HandleFunc("/products/", GetProduct)
+	productsList := http.HandlerFunc(HandleProducts)
+	singleProduct := http.HandlerFunc(GetProduct)
+	http.Handle("/products", middlewareHandlerFunc(productsList))
+	http.Handle("/products/", middlewareHandlerFunc(singleProduct))
 	http.ListenAndServe(":5000", nil)
 }

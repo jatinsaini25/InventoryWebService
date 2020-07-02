@@ -6,10 +6,11 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
-	product "github.com/jatinsaini25/WEBSERVICE/product"
 	"strconv"
 	"strings"
 	"time"
+
+	product "github.com/jatinsaini25/WEBSERVICE/product"
 )
 
 //Product List
